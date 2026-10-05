@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محادثة الذكاء الاصطناعي</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        .chat-container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .chat-box { height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px; background: #fafafa; display: flex; flex-direction: column; }
+        .message { margin-bottom: 10px; padding: 10px 15px; border-radius: 8px; max-width: 80%; line-height: 1.5; }
+        .user-msg { background-color: #007bff; color: white; align-self: flex-start; border-bottom-right-radius: 0; }
+        .ai-msg { background-color: #e9ecef; color: black; align-self: flex-end; border-bottom-left-radius: 0; }
+        .input-group { display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 5px; outline: none; font-size: 16px; }
+        button { padding: 12px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #218838; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <h2 style="text-align: center; color: #333;">المساعد الذكي</h2>
+    <div class="chat-box" id="chatBox"></div>
+    <div class="input-group">
+        <input type="text" id="userInput" placeholder="اكتب سؤالك هنا..." onkeypress="if(event.key === 'Enter') sendMessage()">
+        <button onclick="sendMessage()" id="sendBtn">إرسال</button>
+    </div>
+</div>
+
+<script>
+    async function sendMessage() {
+        const inputField = document.getElementById('userInput');
+        const chatBox = document.getElementById('chatBox');
+        const sendBtn = document.getElementById('sendBtn');
+        const message = inputField.value.trim();
+
+        if (!message) return;
+
+        // إضافة رسالة المستخدم
+        chatBox.innerHTML += `<div class="message user-msg">${message}</div>`;
+        inputField.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // تعطيل الزر أثناء الانتظار
+        sendBtn.disabled = true;
+        sendBtn.innerText = 'جاري المعالجة...';
+
+        try {
+            // إرسال الطلب إلى دالة Vercel
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const data = await response.json();
+            
+            // إضافة رد الذكاء الاصطناعي
+            chatBox.innerHTML += `<div class="message ai-msg">${data.reply || 'لم يتم استلام رد.'}</div>`;
+        } catch (error) {
+            chatBox.innerHTML += `<div class="message ai-msg" style="color: red; font-weight: bold;">حدث خطأ في الاتصال بالسيرفر.</div>`;
+            console.error('Error:', error);
+        }
+
+        // تفعيل الزر مجدداً
+        sendBtn.disabled = false;
+        sendBtn.innerText = 'إرسال';
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
